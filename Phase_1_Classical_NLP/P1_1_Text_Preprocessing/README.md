@@ -7,7 +7,7 @@ Welcome to the **Text Preprocessing** module — the foundational step in every 
 ## 📚 Topics Covered
 
 ### 1.1) Introduction to NLP  
-### 1.2) Text Processing in NLP  
+### 1.2) Text Preprocessing in NLP  
 
 ### 1.3) Tokenization in NLP  
 - 1.3.1) Sentence Tokenization  
