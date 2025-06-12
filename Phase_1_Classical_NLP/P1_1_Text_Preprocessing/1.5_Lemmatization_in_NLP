@@ -1,0 +1,495 @@
+
+# 📘 LEMMATIZATION in NLP :
+
+### What is Lemmatization?
+
+**Lemmatization** is the process of reducing a word to its **base form (lemma)** using **linguistic knowledge** like a vocabulary and morphological analysis.
+
+Unlike stemming, which blindly chops suffixes, **lemmatization looks at the word’s meaning and part of speech (POS)** to return an actual dictionary word.
+
+###### 🧠 Example:
+
+|Word|Lemma (Stemmer Output)|Lemma (Lemmatizer Output)|
+|---|---|---|
+|**better**|"better"|**"good"** (correct)|
+|**running**|"run"|"run"|
+|**rocks**|"rock"|"rock"|
+|**mice**|"mice"|**"mouse"** (correct)|
+
+So, while stemming might say "running" → "runn", lemmatization knows the base verb is "run".
+
+---
+
+### 🛠 How Lemmatization Works Internally
+
+1. **Tokenization** – break text into words.
+2. **POS Tagging** – understand the role of each word (noun, verb, etc.
+3. **Morphological Analysis** – analyze the structure of the word.
+4. **Lookup in a Dictionary (Lexicon)** – match with the correct base form.
+5. **Return the lemma** based on the context and rules.
+
+---
+
+### 🔍 Why is POS Tagging Important?
+
+Lemmatization depends on **context**.  
+For example:
+
+|Word|POS|Lemma|
+|---|---|---|
+|**meeting**|noun|meeting|
+|**meeting**|verb|meet|
+
+Hence, **POS info must be passed explicitly** in most lemmatizers.
+
+---
+
+### 🧰 Popular Lemmatizers
+
+#### 1. **WordNet Lemmatizer (NLTK)** – Dictionary-Based
+
+```python
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet
+from nltk import pos_tag, word_tokenize
+import nltk
+nltk.download('wordnet')
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('averaged_perceptron_tagger_eng')
+
+lemmatizer = WordNetLemmatizer()
+
+# Simple use
+print(lemmatizer.lemmatize("running"))  # Output: running (default POS = noun)
+print(lemmatizer.lemmatize("running", pos='v'))  # Output: run
+
+# POS tagging + Lemmatization
+def nltk_pos_to_wordnet(nltk_pos):
+    if nltk_pos.startswith('J'):
+        return wordnet.ADJ
+    elif nltk_pos.startswith('V'):
+        return wordnet.VERB
+    elif nltk_pos.startswith('N'):
+        return wordnet.NOUN
+    elif nltk_pos.startswith('R'):
+        return wordnet.ADV
+    return wordnet.NOUN  # default
+
+sentence = "The striped bats are hanging on their feet for best"
+tokens = word_tokenize(sentence)
+tagged = pos_tag(tokens)
+lemmatized = [lemmatizer.lemmatize(word, nltk_pos_to_wordnet(pos)) for word, pos in tagged]
+print(lemmatized)
+# ['The', 'striped', 'bat', 'be', 'hang', 'on', 'their', 'foot', 'for', 'best']
+```
+
+###### 🔁 TL;DR First:
+
+> **The WordNet Lemmatizer itself does _not_ find the POS tag.**  
+> You must provide the POS tag explicitly (like `'n'`, `'v'`, `'a'`) for it to work properly.  
+> To _find_ the POS tag, you use a separate **POS tagger**, such as `nltk.pos_tag`.
+
+###### 🔧 THE TWO PARTS INVOLVED
+
+###### 🧩 Part 1: POS Tagging — “What kind of word is this?”
+
+To understand what a word **does in the sentence**, we use **`nltk.pos_tag()`**:
+
+```python
+from nltk import pos_tag, word_tokenize
+
+sentence = "He is running fast"
+tokens = word_tokenize(sentence)
+pos_tag(tokens)
+```
+
+**Output:**
+
+```python
+[('He', 'PRP'), ('is', 'VBZ'), ('running', 'VBG'), ('fast', 'RB')]
+```
+
+Each token is now tagged with a **Penn Treebank POS tag**, like:
+
+- `VBG`: Verb, gerund/present participle
+- `RB`: Adverb
+- `NN`: Noun
+- `JJ`: Adjective
+
+But WordNet Lemmatizer doesn't use Penn Treebank tags directly. It uses simplified POS:
+
+- `'n'` = noun
+- `'v'` = verb
+- `'a'` = adjective
+- `'r'` = adverb
+
+###### 🧭 So we map Treebank → WordNet:
+
+```python
+from nltk.corpus import wordnet
+
+def nltk_pos_to_wordnet(nltk_pos):
+    if nltk_pos.startswith('J'):
+        return wordnet.ADJ      # adjective
+    elif nltk_pos.startswith('V'):
+        return wordnet.VERB     # verb
+    elif nltk_pos.startswith('N'):
+        return wordnet.NOUN     # noun
+    elif nltk_pos.startswith('R'):
+        return wordnet.ADV      # adverb
+    else:
+        return wordnet.NOUN     # default
+```
+
+###### ❗ Key Insight: WordNet Lemmatizer is Dumb Without POS
+
+```python
+lemmatizer.lemmatize("better")       # 'better'
+lemmatizer.lemmatize("better", pos='a')  # 'good' ✅
+```
+
+Without the **POS** hint, it doesn't know "better" is a comparative adjective of "good".
+
+#### 📘 Penn Treebank POS Tags → WordNet Mapped POS
+
+|Penn POS Tag|Meaning|WordNet POS Mapping|Description|
+|---|---|---|---|
+|**NN**|Noun, singular or mass|`n` (NOUN)|`dog`, `car`|
+|**NNS**|Noun, plural|`n` (NOUN)|`dogs`, `cars`|
+|**NNP**|Proper noun, singular|`n` (NOUN)|`John`, `IBM`|
+|**NNPS**|Proper noun, plural|`n` (NOUN)|`Americans`, `Googlers`|
+|**VB**|Verb, base form|`v` (VERB)|`run`, `eat`|
+|**VBD**|Verb, past tense|`v` (VERB)|`ran`, `ate`|
+|**VBG**|Verb, gerund/present participle|`v` (VERB)|`running`, `eating`|
+|**VBN**|Verb, past participle|`v` (VERB)|`run`, `eaten` (past form)|
+|**VBP**|Verb, non-3rd person singular present|`v` (VERB)|`run`, `eat`|
+|**VBZ**|Verb, 3rd person singular present|`v` (VERB)|`runs`, `eats`|
+|**JJ**|Adjective|`a` (ADJ)|`quick`, `blue`|
+|**JJR**|Adjective, comparative|`a` (ADJ)|`quicker`, `better`|
+|**JJS**|Adjective, superlative|`a` (ADJ)|`quickest`, `best`|
+|**RB**|Adverb|`r` (ADV)|`quickly`, `silently`|
+|**RBR**|Adverb, comparative|`r` (ADV)|`faster`, `more quietly`|
+|**RBS**|Adverb, superlative|`r` (ADV)|`fastest`, `most quietly`|
+|**IN**|Preposition/subordinating conjunction|_None_|`in`, `of`, `because`|
+|**DT**|Determiner|_None_|`the`, `a`, `an`|
+|**PRP**|Personal pronoun|_None_|`he`, `she`, `it`|
+|**PRP$**|Possessive pronoun|_None_|`his`, `her`, `its`|
+|**CC**|Coordinating conjunction|_None_|`and`, `or`, `but`|
+|**UH**|Interjection|_None_|`uh`, `wow`, `oh`|
+|**CD**|Cardinal number|_None_|`one`, `two`, `100`|
+|**EX**|Existential there|_None_|`there` (as in “there is”)|
+|**FW**|Foreign word|_None_|`et`, `al`, `bonjour`|
+|**LS**|List item marker|_None_|`1.`, `A.`|
+|**MD**|Modal|_None_|`can`, `should`, `will`|
+|**POS**|Possessive ending|_None_|`'s`|
+|**SYM**|Symbol|_None_|`+`, `=`, `@`|
+|**TO**|“to” as preposition/infinitive marker|_None_|`to`|
+|**WDT**|Wh-determiner|_None_|`which`, `that`|
+|**WP**|Wh-pronoun|_None_|`who`, `what`|
+|**WP$**|Possessive wh-pronoun|_None_|`whose`|
+|**WRB**|Wh-adverb|_None_|`where`, `when`|
+
+> ✅ Only `NN*`, `VB*`, `JJ*`, `RB*` map to WordNet POS (`n`, `v`, `a`, `r`) — everything else is ignored by lemmatizer.
+
+###### 🧠 Part 2: Lemmatization — “What is the base form of this word, given its POS?”
+
+The `WordNetLemmatizer` uses **WordNet’s dictionary lookup** based on the **POS** you give it:
+
+```python
+from nltk.stem import WordNetLemmatizer
+lemmatizer = WordNetLemmatizer()
+
+lemmatizer.lemmatize("running", pos="v")  # "run"
+lemmatizer.lemmatize("running", pos="n")  # "running"
+```
+
+See how important POS is?
+
+- As a **verb**, "running" → "run"
+- As a **noun**, "running" stays "running"
+
+###### 🧠 WordNet Dictionary Lookup Examples (How Lemmatizer Uses POS)
+
+The `WordNetLemmatizer` uses the **word + POS** to look up a lemma from its **lexical database**.
+
+|Word|POS|Lemma Found|Meaning|
+|---|---|---|---|
+|`running`|`v` (verb)|`run`|action of running|
+|`running`|`n` (noun)|`running`|the sport itself|
+|`better`|`a` (adj)|`good`|comparative form → original adjective|
+|`better`|`v` (verb)|`better`|to improve|
+|`ate`|`v` (verb)|`eat`|past tense → base form|
+|`feet`|`n` (noun)|`foot`|irregular plural → singular|
+|`rocks`|`n` (noun)|`rock`|plural noun → base noun|
+|`rocks`|`v` (verb)|`rock`|verb → base verb|
+|`cars`|`n` (noun)|`car`|plural noun → singular|
+
+> 💡 Without the correct POS, the lemmatizer may return the input word unchanged because it doesn't know which lemma to look for.
+
+Would you like me to now walk through **stopword removal**, or would you prefer to dive deeper into **WordNet’s internal structure (synsets, definitions, relations)** next?
+
+---
+
+#### 2. **spaCy Lemmatizer** – Rule + Dictionary Based (Much faster and cleaner)
+
+```python
+import spacy
+
+nlp = spacy.load("en_core_web_sm")
+
+doc = nlp("The striped bats are hanging on their feet for best")
+
+for token in doc:
+    print(f"{token.text:10} -> {token.lemma_:10} POS: {token.pos_}")
+```
+
+| Token   | Lemma  | POS  |
+| ------- | ------ | ---- |
+| The     | the    | DET  |
+| striped | stripe | ADJ  |
+| bats    | bat    | NOUN |
+| are     | be     | AUX  |
+| hanging | hang   | VERB |
+| on      | on     | ADP  |
+| their   | their  | PRON |
+| feet    | foot   | NOUN |
+| for     | for    | ADP  |
+| best    | good   | ADJ  |
+
+spaCy’s lemmatizer transforms words into their **base or dictionary form (lemma)** by:
+1. Using **linguistic rules** and **lookup tables**.
+2. Automatically identifying **POS tags** before lemmatizing.
+
+###### 🧠 Step-by-Step: How spaCy Lemmatizer Works
+
+###### ✅ Step 1: Load Language Model
+
+```python
+import spacy
+nlp = spacy.load("en_core_web_sm")
+```
+
+This loads:
+- **Tokenizer**
+- **Tagger** (for POS)
+- **Lemmatizer**
+
+###### ✅ Step 2: Process Text and Assign POS
+
+```python
+doc = nlp("The striped bats are hanging on their feet and better options are flying.")
+for token in doc:
+    print(f"{token.text:<10} POS: {token.pos_:<10} Tag: {token.tag_}")
+```
+
+Example output:
+
+|Token|POS|Detailed POS (Tag)|
+|---|---|---|
+|striped|ADJ|VBN|
+|bats|NOUN|NNS|
+|are|AUX|VBP|
+|hanging|VERB|VBG|
+|better|ADJ|JJR|
+
+➡️ spaCy uses **statistical models trained on Treebank corpora** to predict:
+
+- `token.pos_`: Universal POS tag (simplified, like VERB/NOUN)
+- `token.tag_`: Penn Treebank detailed POS tag (e.g., VBD, VBG)
+
+###### ✅ Step 3: POS + Rules = Lemma Lookup
+
+Now that POS is known, spaCy applies **lookup rules** based on the POS to find the lemma:
+
+```python
+for token in doc:
+    print(f"{token.text:<10} POS: {token.pos_:<10} Lemma: {token.lemma_}")
+```
+
+Sample Output:
+
+|Token|POS|Lemma|
+|---|---|---|
+|striped|ADJ|stripe|
+|bats|NOUN|bat|
+|are|AUX|be|
+|hanging|VERB|hang|
+|better|ADJ|well|
+
+###### 🔧 Internal Working: spaCy Lemmatizer Engine
+
+spaCy uses two main strategies under the hood:
+
+###### 1. **Lookup Lemmatizer**
+
+- Based on hardcoded dictionary rules.
+- For irregular verbs, nouns, adjectives.
+- Example: `feet → foot`, `ate → eat`, `better → well`.
+
+These dictionaries are stored in:
+- `en_core_web_sm/en/lemmatizer/lookup.json`
+
+###### 2. **Rule-Based Lemmatizer**
+
+- Applies suffix-stripping and affix rules if the lookup fails.
+- Rules are POS-aware. For example:
+    - If the word ends in `-ing` and POS = VERB → Try removing `-ing` and check if it's a verb.
+    - If it ends in `-ed`, check if it's past tense and revert accordingly.
+
+###### ❓Which POS is Actually Used in Lemmatization?
+
+spaCy uses `token.pos_` (universal POS) in lemmatization — not the detailed tag.
+
+However, the detailed tag `token.tag_` helps spaCy predict `token.pos_` more accurately during tagging.
+
+##### 🔁 Fallback Hierarchy
+
+spaCy uses a **fallback system**:
+
+```
+1. Irregular word lookup (lexeme-specific rules)
+2. Exceptions file for that language
+3. Suffix rules per POS tag
+4. Default to the original word
+```
+
+### Do You Want to Go Deeper?
+
+- Explain how **custom lemmatizers** can be added in spaCy
+- Compare spaCy lemmatizer vs WordNetLemmatizer
+- Visualize the **entire NLP pipeline** inside spaCy (from token to lemma)
+
+
+---
+
+#### 3. **Stanza (StanfordNLP)** – Neural-Based Lemmatizer
+
+```python
+import stanza
+stanza.download('en')
+nlp = stanza.Pipeline('en', processors='tokenize,pos,lemma')
+
+doc = nlp("He was walking towards the buildings.")
+
+for sentence in doc.sentences:
+    for word in sentence.words:
+        print(f"{word.text:10} POS: {word.xpos:5} Lemma: {word.lemma}")
+```
+
+**Output** : 
+
+```
+He POS: PRP Lemma: he
+was POS: VBD Lemma: be
+walking POS: VBG Lemma: walk
+towards POS: IN Lemma: towards
+the POS: DT Lemma: the
+buildings POS: NNS Lemma: building
+. POS: . Lemma: .
+```
+
+> **Stanza** is a Python NLP library developed by **Stanford NLP Group**, offering accurate, neural-network-based NLP tools including lemmatization, POS tagging, dependency parsing, etc.
+
+It’s designed to be **language-rich**, **pretrained**, and **modular**.
+
+> Stanza gives very **accurate lemmatization** and **morphological details** but is **slower** than spaCy.
+
+Stanza uses **deep learning models** to predict the lemma based on:
+
+- Word
+- POS tag
+- Morphological features (e.g., tense, number, case)
+- Word context (using BiLSTM)
+
+#### 🔍 Step-by-Step: How Stanza Lemmatization Works
+
+#### ✅ Step 1: Load NLP Pipeline
+
+```python
+import stanza
+stanza.download('en')  # download English models (only once)
+nlp = stanza.Pipeline(lang='en', processors='tokenize,pos,lemma')
+```
+
+This loads:
+- Tokenizer
+- POS Tagger
+- Lemmatizer (based on pre-trained neural model)
+
+#### ✅ Step 2: Run Lemmatizer
+
+```python
+doc = nlp("The children are playing in the parks.")
+
+for sentence in doc.sentences:
+    for word in sentence.words:
+        print(f"Word: {word.text}, POS: {word.xpos}, Lemma: {word.lemma}")
+```
+
+#### 🔬 Internal Architecture of Stanza Lemmatizer
+
+Unlike spaCy or NLTK, which use rule-based or lookup-based approaches, **Stanza’s lemmatizer is neural-based** and works like this:
+
+#### 🔧 Under the Hood:
+
+###### 1. **Inputs to the Lemmatizer Neural Model**:
+- Word token
+- POS tag (from POS tagger)
+- Character-level embeddings (to model word morphology)
+- Contextual embeddings (e.g., from LSTM/GRU)
+###### 2. **Character-Level Encoder (BiLSTM)**
+- Processes the word as a sequence of characters.
+- Learns word structure like prefixes/suffixes (`running → run`, `children → child`).
+- This helps handle **unseen words** and **inflections**.
+###### 3. **Contextual Encoder (optional)**
+- Sees neighboring words to decide the correct lemma.
+- Example: `flies` → could be `fly` (noun or verb) — depends on context.
+###### 4. **Decoder: Sequence Prediction Model**
+- Outputs the lemma as a **character sequence** (e.g., `children` → `c-h-i-l-d`).
+- Works like a character-level translator (inflected form → base form).
+###### 5. **Training Corpus**
+- Trained on **Universal Dependencies treebanks**.
+- These datasets include correct POS tags, words, and lemmas.
+
+---
+
+### 📊 Lemmatizer Comparison
+
+|Feature|WordNet Lemmatizer|spaCy|Stanza|
+|---|---|---|---|
+|Type|Dictionary-based|Rule+Dict|Neural (ML-based)|
+|POS Tagging Required|Yes (Manual)|Auto|Auto|
+|Accuracy|Good|Very Good|Excellent|
+|Speed|Fast|Very Fast|Slower|
+|Languages|English only|Multi|Multi|
+
+---
+
+### 📌 When to Use Lemmatization?
+
+Use when:
+
+- You need **true base forms** (not just root forms).
+- You're doing tasks like **text classification, translation, QA, summarization**.
+- Your model is sensitive to meaning (LLMs, RNNs, etc.).
+
+Avoid for:
+
+- Keyword-based tasks where speed is critical.
+- Very short or simple datasets (use stemming for quick baseline).
+
+---
+
+### ✅ Quick Recap:
+
+|          | Stemming         | Lemmatization          |
+| -------- | ---------------- | ---------------------- |
+| Output   | Not always valid | Always dictionary word |
+| Based on | Rules only       | Dictionary + POS       |
+| Speed    | Very Fast        | Fast / Slower          |
+| Accuracy | Lower            | Higher                 |
+| Context  | Ignored          | Considered             |
+
+---
+---
