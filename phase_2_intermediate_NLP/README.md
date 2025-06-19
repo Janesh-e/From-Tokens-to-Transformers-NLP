@@ -16,7 +16,7 @@
 - Visualize embeddings with `t-SNE`
 - Build LSTM for sentiment classification (`IMDB dataset`)
 - Implement sequence labeling (Bi-LSTM + CRF) for NER
-- Train a character-level text generator
+- Train a character level text generator
 
 ### 📘 Resources:
 
