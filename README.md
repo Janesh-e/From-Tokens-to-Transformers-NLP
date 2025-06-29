@@ -79,7 +79,7 @@ Each folder contains notes, code examples, visual aids, and references. Navigate
 
 ---
 
-### 🤝 Contributions
+## 🤝 Contributions
 
 Contributions are warmly welcome! This repository is an ongoing learning archive for NLP enthusiasts, and there's always room for improvement and expansion.
 
@@ -94,7 +94,7 @@ If you'd like to help, you can contribute in the following ways:
 
 ---
 
-### 🚀 How to Contribute
+## 🚀 How to Contribute
 
 * Fork this repo and create a new branch.
 * Make your changes or additions.
@@ -103,7 +103,7 @@ If you'd like to help, you can contribute in the following ways:
 
 ---
 
-### 📩 Alternative Contributions
+## 📩 Alternative Contributions
 
 If you’d rather not make a pull request, feel free to:
 
